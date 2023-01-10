@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/antchfx/htmlquery"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/unicode"
@@ -11,7 +12,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
@@ -61,11 +61,15 @@ func main() {
 		return
 	}
 
-	//var headerRe = regexp.MustCompile(`<div class="news_cli"[\s\S]*?<h2>[\s\S]*?<a.*?target="_blank">([\s\S]*?)</a>`)
-	var headerRe = regexp.MustCompile(`<div class="small_toplink__GmZhY"[\s\S]*?<h2>([\s\S]*?)</h2>`)
-	matches := headerRe.FindAllSubmatch(fetch, -1)
-	for _, m := range matches {
-		log.Println("fetch card news:", string(m[1]))
+	doc, err := htmlquery.Parse(bytes.NewReader(fetch))
+	if err != nil {
+		log.Printf("htmlquery.Parse failed:%v\n", err)
+	}
+	//nodes := htmlquery.Find(doc, `//div[@class="news_li"]/h2/a[@target="_blank"`)
+	nodes := htmlquery.Find(doc, `//div[@class="small_toplink__GmZhY"]/a/h2`)
+
+	for _, node := range nodes {
+		log.Println("Fetch card ", node.FirstChild.Data)
 	}
 }
 
