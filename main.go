@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"mycrawler/collect"
+	"time"
 )
 
 func init() {
@@ -14,7 +15,9 @@ func main() {
 	url := "https://book.douban.com/subject/1007305/"
 
 	var f collect.Fetcher
-	f = collect.BrowserFetch{}
+	f = collect.BrowserFetch{
+		Timeout: 500 * time.Millisecond,
+	}
 
 	body, err := f.Get(url)
 	if err != nil {

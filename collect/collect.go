@@ -39,10 +39,14 @@ func (ChromedpFetcher) Get(url string) ([]byte, error) {
 	return []byte(body), nil
 }
 
-type BrowserFetch struct{}
+type BrowserFetch struct {
+	Timeout time.Duration
+}
 
-func (BrowserFetch) Get(url string) ([]byte, error) {
-	client := &http.Client{}
+func (b BrowserFetch) Get(url string) ([]byte, error) {
+	client := &http.Client{
+		Timeout: b.Timeout,
+	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
