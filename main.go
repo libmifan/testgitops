@@ -1,51 +1,11 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"fmt"
-	"github.com/antchfx/htmlquery"
-	"golang.org/x/net/html/charset"
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/unicode"
-	"golang.org/x/text/transform"
-	"io/ioutil"
+	"context"
+	"github.com/chromedp/chromedp"
 	"log"
-	"net/http"
-	"strings"
+	"time"
 )
-
-func mainDpre() {
-	url := "https://www.thepaper.cn/"
-
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println("fether url error:%v", err)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Error status code: %v", resp.StatusCode)
-		return
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("ReadAll error:", err)
-		return
-	}
-
-	//fmt.Println("body:", string(body))
-	n := strings.Count(string(body), "<a")
-	bn := bytes.Count(body, []byte("<a"))
-	if n != bn {
-		fmt.Printf("n: %d, bn: %d\n", n, bn)
-	}
-	fmt.Println("contains url: ", n)
-
-}
 
 func init() {
 	log.SetPrefix("HTTP DEV: ")
@@ -53,53 +13,28 @@ func init() {
 }
 
 func main() {
-	url := "https://www.thepaper.cn/"
+	// 1. 创建谷歌浏览器实例
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+	)
+	defer cancel()
 
-	fetch, err := Fetch(url)
-	if err != nil {
-		log.Println("Failed to fetch url:", err)
-		return
-	}
+	// 2. 设置 context 超时时间
+	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 
-	doc, err := htmlquery.Parse(bytes.NewReader(fetch))
-	if err != nil {
-		log.Printf("htmlquery.Parse failed:%v\n", err)
-	}
-	//nodes := htmlquery.Find(doc, `//div[@class="news_li"]/h2/a[@target="_blank"`)
-	nodes := htmlquery.Find(doc, `//div[@class="small_toplink__GmZhY"]/a/h2`)
-
-	for _, node := range nodes {
-		log.Println("Fetch card ", node.FirstChild.Data)
-	}
-}
-
-func Fetch(url string) ([]byte, error) {
-
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Println("not the expected status:", resp.StatusCode)
-	}
-
-	reader := bufio.NewReader(resp.Body)
-	e := DeterminEncoding(reader)
-	utf8Reader := transform.NewReader(reader, e.NewDecoder())
-	return ioutil.ReadAll(utf8Reader)
-}
-
-func DeterminEncoding(r *bufio.Reader) encoding.Encoding {
-	bytes, err := r.Peek(1024)
+	// 3. 爬取页面，等待某一个元素出现，接着模拟鼠标点击，最后获取数据
+	var example string
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(`https://pkg.go.dev/time`),
+		chromedp.WaitVisible(`body > footer`),
+		chromedp.Click(`#example-After`, chromedp.NodeVisible),
+		chromedp.Value(`#example-After textarea`, &example),
+	)
 
 	if err != nil {
-		log.Println("fetch error:", err)
-		return unicode.UTF8
+		log.Fatal(err)
 	}
+	log.Printf("Go's time.After example:\n%s", example)
 
-	e, _, _ := charset.DetermineEncoding(bytes, "")
-	return e
 }
