@@ -1,6 +1,7 @@
 package doubangroup
 
 import (
+	"fmt"
 	"mycrawler/collect"
 	"regexp"
 )
@@ -15,6 +16,7 @@ func ParseURL(contents []byte, req *collect.Request) collect.ParseResult {
 
 	for _, m := range matches {
 		u := string(m[1])
+		fmt.Println("found url:", u)
 		result.Requesrts = append(
 			result.Requesrts, &collect.Request{
 				Url:    u,
@@ -27,7 +29,7 @@ func ParseURL(contents []byte, req *collect.Request) collect.ParseResult {
 	return result
 }
 
-const ContentRe = `<div class="topic-content">[\s\S]*?阳台[\s\S]*?</div`
+const ContentRe = `<div class="topic-content">[\s\S]*?阳台[\s\S]*?<div"`
 
 func GetContent(contents []byte, url string) collect.ParseResult {
 	re := regexp.MustCompile(ContentRe)
