@@ -13,7 +13,8 @@ func init() {
 }
 
 func main() {
-	proxyURLs := []string{"http://whatname:USA*678.com@43.159.63.218:443"}
+	//proxyURLs := []string{"https://sig.dahuangsz.com:443"}
+	proxyURLs := []string{"https://whatname:USA*678.com@sig.dahuangsz.com:443"}
 	url := "https://www.google.com"
 
 	p, err := proxy.RoundRobinProxySwitcher(proxyURLs...)
@@ -23,15 +24,16 @@ func main() {
 
 	var f collect.Fetcher
 	f = collect.BrowserFetch{
-		Timeout: 500 * time.Millisecond,
+		Timeout: 5000 * time.Millisecond,
 		Proxy:   p,
 	}
 
 	body, err := f.Get(url)
 	if err != nil {
-		log.Println("Failed to fetch url:", err)
-		return
+		log.Printf("Failed to fetch url: %v", err)
+		//return
 	}
+	body, _ = f.Get(url)
 
 	log.Printf("Body:\n %s", string(body))
 	//doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
