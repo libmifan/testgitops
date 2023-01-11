@@ -2,9 +2,7 @@ package collect
 
 import (
 	"bufio"
-	"context"
 	"fmt"
-	"github.com/chromedp/chromedp"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/unicode"
@@ -17,28 +15,7 @@ import (
 )
 
 type Fetcher interface {
-	Get(url string) ([]byte, error)
-}
-
-type ChromedpFetcher struct{}
-
-func (ChromedpFetcher) Get(url string) ([]byte, error) {
-
-	ctx, cancel := chromedp.NewContext(context.Background())
-	defer cancel()
-
-	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-
-	var body string
-	err := chromedp.Run(ctx,
-		chromedp.Navigate(url),
-		chromedp.WaitVisible(`body > footer`),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(body), nil
+	Get(url *Request) ([]byte, error)
 }
 
 type BrowserFetch struct {
@@ -46,7 +23,7 @@ type BrowserFetch struct {
 	Proxy   proxy.ProxyFunc
 }
 
-func (b BrowserFetch) Get(url string) ([]byte, error) {
+func (b BrowserFetch) Get(request *Request) ([]byte, error) {
 	client := &http.Client{
 		Timeout: b.Timeout,
 	}
@@ -56,9 +33,13 @@ func (b BrowserFetch) Get(url string) ([]byte, error) {
 		client.Transport = transport
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", request.Url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get url failed:%v", err)
+	}
+
+	if len(request.Cookie) > 0 {
+		req.Header.Set("Cookie", request.Cookie)
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36")
